@@ -6161,6 +6161,18 @@ def _print_stash_cleanup_guidance(
         )
 
 
+def _auto_restore_update_stash_enabled() -> bool:
+    try:
+        from hermes_cli.config import load_config
+
+        update_config = (load_config() or {}).get("update") or {}
+        if not isinstance(update_config, dict):
+            return False
+        return bool(update_config.get("auto_restore_local_changes", False))
+    except Exception:
+        return False
+
+
 def _restore_stashed_changes(
     git_cmd: list[str],
     cwd: Path,
@@ -7336,6 +7348,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         else None
     )
     assume_yes = bool(getattr(args, "yes", False))
+    auto_restore_local_changes = assume_yes or _auto_restore_update_stash_enabled()
 
     print("⚕ Updating Hermes Agent...")
     print()
@@ -7457,7 +7470,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         prompt_for_restore = (
             auto_stash_ref is not None
-            and not assume_yes
+            and not auto_restore_local_changes
             and (gateway_mode or (sys.stdin.isatty() and sys.stdout.isatty()))
         )
 
@@ -11041,6 +11054,16 @@ Examples:
         "--limit", type=int, default=500, help="Max sessions to load (default: 500)"
     )
 
+    sessions_live = sessions_subparsers.add_parser(
+        "live",
+        help="Inspect and control tmux-managed live Hermes sessions",
+    )
+    sessions_live.add_argument(
+        "live_args",
+        nargs=argparse.REMAINDER,
+        help="Arguments for live session control: list, start, send, capture, attach",
+    )
+
     def _confirm_prompt(prompt: str) -> bool:
         """Prompt for y/N confirmation, safe against non-TTY environments."""
         try:
@@ -11065,7 +11088,12 @@ Examples:
         _source = getattr(args, "source", None)
         _exclude = None if _source else ["tool"]
 
-        if action == "list":
+        if action == "live":
+            from hermes_cli.live_sessions import main as live_sessions_main
+
+            live_sessions_main(getattr(args, "live_args", None) or ["list"])
+
+        elif action == "list":
             sessions = db.list_sessions_rich(
                 source=args.source, exclude_sources=_exclude, limit=args.limit
             )
@@ -11075,10 +11103,10 @@ Examples:
             has_titles = any(s.get("title") for s in sessions)
             if has_titles:
                 print(f"{'Title':<32} {'Preview':<40} {'Last Active':<13} {'ID'}")
-                print("─" * 110)
+                print("-" * 110)
             else:
                 print(f"{'Preview':<50} {'Last Active':<13} {'Src':<6} {'ID'}")
-                print("─" * 95)
+                print("-" * 95)
             for s in sessions:
                 last_active = _relative_time(s.get("last_active"))
                 preview = (
@@ -11087,7 +11115,7 @@ Examples:
                     else s.get("preview", "")[:48]
                 )
                 if has_titles:
-                    title = (s.get("title") or "—")[:30]
+                    title = (s.get("title") or "-")[:30]
                     sid = s["id"]
                     print(f"{title:<32} {preview:<40} {last_active:<13} {sid}")
                 else:

@@ -19,8 +19,11 @@ def managed_nous_tools_enabled() -> bool:
 
     The Tool Gateway is available to any Nous subscriber who is NOT on
     the free tier.  We intentionally catch all exceptions and return
-    False — never block the agent startup path.
+    False, but callers may still force this off to avoid synchronous auth
+    checks in latency-sensitive gateway paths.
     """
+    if is_truthy_value(os.getenv("HERMES_DISABLE_MANAGED_NOUS_TOOLS"), default=False):
+        return False
     try:
         from hermes_cli.auth import get_nous_auth_status
 

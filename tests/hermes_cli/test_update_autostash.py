@@ -8,6 +8,22 @@ from hermes_cli import config as hermes_config
 from hermes_cli import main as hermes_main
 
 
+def test_auto_restore_update_stash_enabled_reads_config(monkeypatch):
+    monkeypatch.setattr(
+        hermes_config,
+        "load_config",
+        lambda: {"update": {"auto_restore_local_changes": True}},
+    )
+
+    assert hermes_main._auto_restore_update_stash_enabled() is True
+
+
+def test_auto_restore_update_stash_enabled_defaults_false(monkeypatch):
+    monkeypatch.setattr(hermes_config, "load_config", lambda: {})
+
+    assert hermes_main._auto_restore_update_stash_enabled() is False
+
+
 def test_stash_local_changes_if_needed_returns_none_when_tree_clean(monkeypatch, tmp_path):
     calls = []
 
