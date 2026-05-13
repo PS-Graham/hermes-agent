@@ -9201,10 +9201,10 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "computer-use",
         "config", "cron", "curator", "dashboard", "debug", "doctor",
         "dump", "fallback", "gateway", "hooks", "import", "insights",
-        "kanban", "login", "logout", "logs", "mcp", "memory", "model",
-        "pairing", "plugins", "profile", "sessions", "setup", "skills",
-        "slack", "status", "tools", "uninstall", "update", "version",
-        "webhook", "whatsapp", "chat",
+        "kanban", "login", "logout", "logs", "lsp", "mcp", "memory",
+        "model", "pairing", "plugins", "profile", "sessions", "setup",
+        "skills", "slack", "status", "tools", "uninstall", "update",
+        "version", "webhook", "whatsapp", "chat",
         # Help-ish invocations — plugin commands not being listed in
         # top-level --help is an acceptable trade-off for skipping an
         # expensive eager import of every bundled plugin module.
@@ -9403,7 +9403,7 @@ def main():
     gateway_parser = subparsers.add_parser(
         "gateway",
         help="Messaging gateway management",
-        description="Manage the messaging gateway (Telegram, Discord, WhatsApp)",
+        description="Manage the messaging gateway (Telegram, Discord, WhatsApp, Weixin, and more)",
     )
     gateway_subparsers = gateway_parser.add_subparsers(dest="gateway_command")
 
@@ -9545,6 +9545,17 @@ def main():
     )
 
     gateway_parser.set_defaults(func=cmd_gateway)
+
+    # =========================================================================
+    # lsp command
+    # =========================================================================
+    try:
+        from agent.lsp.cli import register_subparser as _lsp_register
+        _lsp_register(subparsers)
+    except Exception as _lsp_err:  # noqa: BLE001
+        # LSP is optional infrastructure — never let a registration
+        # failure break the CLI overall.
+        logger.debug("LSP CLI registration failed: %s", _lsp_err)
 
     # =========================================================================
     # setup command
