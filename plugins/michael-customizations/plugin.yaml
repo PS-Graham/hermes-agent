@@ -1,0 +1,19 @@
+name: michael-customizations
+label: Michael's Hermes customizations
+version: 1.0.0
+author: Michael Graham
+description: >
+  Local customizations ported from PS-Graham/hermes-agent
+  (michael/local-hermes-customizations): tmux-managed live session control,
+  pre-compaction session review checkpoints, and the
+  HERMES_DISABLE_MANAGED_NOUS_TOOLS switch. Lives in HERMES_HOME so it survives
+  `hermes update`, which lands stable installs detached at the release commit.
+requires_hermes: ">=0.22.5"
+provides_hooks:
+  - pre_api_request
+  - pre_auxiliary_call
+optional_env:
+  - name: HERMES_DISABLE_MANAGED_NOUS_TOOLS
+    description: "Truthy value forces the Nous Tool Gateway off"
+    prompt: "Disable managed Nous tools"
+    password: false
